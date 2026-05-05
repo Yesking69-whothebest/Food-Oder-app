@@ -1,13 +1,13 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import Navbar from '@/components/Navbar'
 import { CATEGORIES, type MenuItem, type Category } from '@/types'
 
-export default function DashboardPage() {
+function DashboardContent() {
   const [items, setItems] = useState<MenuItem[]>([])
   const [favorites, setFavorites] = useState<number[]>([])
   const [user, setUser] = useState<any>(null)
@@ -115,7 +115,6 @@ export default function DashboardPage() {
             {items.map((item) => (
               <div key={item.id} className="bg-white rounded-2xl shadow hover:shadow-lg transition-all overflow-hidden flex flex-col">
                 <div className="relative">
-                  {/* ********** FIXED IMAGE DISPLAY ********** */}
                   {item.photo ? (
                     <img
                       src={item.photo}
@@ -182,5 +181,18 @@ export default function DashboardPage() {
         )}
       </div>
     </div>
+  )
+}
+
+// Wrap the whole page component with Suspense
+export default function DashboardPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-orange-500 font-black text-xl">Loading dashboard…</div>
+      </div>
+    }>
+      <DashboardContent />
+    </Suspense>
   )
 }
