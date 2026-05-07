@@ -50,7 +50,7 @@ export default function Footer() {
             <a href="https://youtu.be/dQw4w9WgXcQ?si=pt5GFBX-OReYNvCp" className="text-gray-400 hover:text-white transition">
               <FaInstagram size={20} />
             </a>
-            <a href="https://fhtgpfjzluvzkfioeria.supabase.co/storage/v1/object/public/menu-images/1778056053856_Gorilla.png" className="text-gray-400 hover:text-white transition">
+            <a href="https://fhtgpfjzluvzkfioeria.supabase.co/storage/v1/object/public/menu-images/1778123675759_black.jpg" className="text-gray-400 hover:text-white transition">
               <FaTwitter size={20} />
             </a>
           </div>
