@@ -37,7 +37,6 @@ export default function AddMenuPage() {
     const file = e.target.files?.[0]
     if (file) {
       setImageFile(file)
-      // Create preview URL
       const reader = new FileReader()
       reader.onloadend = () => {
         setImagePreview(reader.result as string)
@@ -61,7 +60,6 @@ export default function AddMenuPage() {
       return null
     }
 
-    // Get public URL
     const { data: urlData } = supabase.storage
       .from('menu-images')
       .getPublicUrl(data.path)
@@ -79,11 +77,17 @@ export default function AddMenuPage() {
       return
     }
 
+    // Limit stock to max 50
+    if (Number(stock) > 50) {
+      setError('Stock cannot exceed 50.')
+      setLoading(false)
+      return
+    }
+
     setLoading(true)
 
     let photoUrl: string | null = null
 
-    // Upload image if selected
     if (imageFile) {
       photoUrl = await uploadImage(imageFile)
       if (!photoUrl) {
@@ -93,13 +97,12 @@ export default function AddMenuPage() {
       }
     }
 
-    // Insert into database
     const { error: insertError } = await supabase.from('menu_items').insert({
       name,
       category,
       description,
       price: Number(price),
-      stock: Number(stock) || 10,
+      stock: Number(stock) > 50 ? 50 : Number(stock),
       photo: photoUrl,
     })
 
@@ -110,7 +113,6 @@ export default function AddMenuPage() {
     }
 
     setSuccess('Menu item added successfully!')
-    // Reset form
     setName('')
     setCategory('')
     setDescription('')
@@ -179,11 +181,19 @@ export default function AddMenuPage() {
                 placeholder="e.g. 4.50" />
             </div>
 
+            {/* Stock field with max 50 */}
             <div className="mb-5">
-              <label className="block text-gray-700 font-semibold mb-2">Stock</label>
-              <input type="number" min="0" required value={stock} onChange={e => setStock(e.target.value)}
+              <label className="block text-gray-700 font-semibold mb-2">Stock (max 50)</label>
+              <input
+                type="number"
+                min="0"
+                max="50"
+                required
+                value={stock}
+                onChange={e => setStock(e.target.value)}
                 className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-4 focus:ring-orange-400 outline-none transition-all"
-                placeholder="e.g. 10" />
+                placeholder="e.g. 10"
+              />
             </div>
 
             {/* Image Upload Section */}

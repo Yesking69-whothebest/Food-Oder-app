@@ -15,7 +15,7 @@ export default function EditMenuPage() {
   const [description, setDescription] = useState('')
   const [price, setPrice] = useState('')
   const [stock, setStock] = useState('')
-  const [currentPhoto, setCurrentPhoto] = useState<string | null>(null) // existing photo URL
+  const [currentPhoto, setCurrentPhoto] = useState<string | null>(null)
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState<string | null>(null)
   const [error, setError] = useState('')
@@ -42,18 +42,16 @@ export default function EditMenuPage() {
       setPrice(String(item.price))
       setStock(String(item.stock))
       setCurrentPhoto(item.photo || null)
-      setImagePreview(item.photo || null) // show current photo as preview initially
+      setImagePreview(item.photo || null)
       setInitialLoading(false)
     }
     init()
   }, [supabase, router, id])
 
-  // Handle file selection
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
       setImageFile(file)
-      // Create preview URL
       const reader = new FileReader()
       reader.onloadend = () => {
         setImagePreview(reader.result as string)
@@ -62,7 +60,6 @@ export default function EditMenuPage() {
     }
   }
 
-  // Upload image to Supabase Storage
   const uploadImage = async (file: File): Promise<string | null> => {
     const fileName = `${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.]/g, '_')}`
     const { data, error } = await supabase.storage
@@ -77,7 +74,6 @@ export default function EditMenuPage() {
       return null
     }
 
-    // Get public URL
     const { data: urlData } = supabase.storage
       .from('menu-images')
       .getPublicUrl(data.path)
@@ -95,11 +91,17 @@ export default function EditMenuPage() {
       return
     }
 
+    // Limit stock to max 50
+    if (Number(stock) > 50) {
+      setError('Stock cannot exceed 50.')
+      setLoading(false)
+      return
+    }
+
     setLoading(true)
 
-    let photoUrl = currentPhoto // keep existing by default
+    let photoUrl = currentPhoto
 
-    // Upload new image if selected
     if (imageFile) {
       const uploadedUrl = await uploadImage(imageFile)
       if (!uploadedUrl) {
@@ -115,7 +117,7 @@ export default function EditMenuPage() {
       category,
       description,
       price: Number(price),
-      stock: Number(stock),
+      stock: Number(stock) > 50 ? 50 : Number(stock),
       photo: photoUrl,
     }).eq('id', id)
 
@@ -126,7 +128,7 @@ export default function EditMenuPage() {
     }
 
     setSuccess('Menu item updated successfully!')
-    setCurrentPhoto(photoUrl) // update current photo state
+    setCurrentPhoto(photoUrl)
     setImagePreview(photoUrl)
     setImageFile(null)
     if (fileInputRef.current) fileInputRef.current.value = ''
@@ -162,7 +164,6 @@ export default function EditMenuPage() {
         )}
 
         <div className="bg-white rounded-2xl shadow p-8">
-          {/* Show current image if exists */}
           {imagePreview && (
             <div className="mb-6 text-center">
               <img
@@ -206,10 +207,18 @@ export default function EditMenuPage() {
                 className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-4 focus:ring-orange-400 outline-none transition-all" />
             </div>
 
+            {/* Stock field with max 50 */}
             <div className="mb-5">
-              <label className="block text-gray-700 font-semibold mb-2">Stock</label>
-              <input type="number" min="0" required value={stock} onChange={e => setStock(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-4 focus:ring-orange-400 outline-none transition-all" />
+              <label className="block text-gray-700 font-semibold mb-2">Stock (max 50)</label>
+              <input
+                type="number"
+                min="0"
+                max="50"
+                required
+                value={stock}
+                onChange={e => setStock(e.target.value)}
+                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-4 focus:ring-orange-400 outline-none transition-all"
+              />
             </div>
 
             {/* Image Upload Section */}
