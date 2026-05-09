@@ -59,7 +59,7 @@ export default function Footer() {
 
       {/* Bottom bar */}
       <div className="border-t border-gray-700 py-4 text-center text-xs text-gray-500">
-        &copy; {new Date().getFullYear()} FoodOrder. All rights reserved.
+        &copy; {new Date().getFullYear()} FoodOrderApp. All rights reserved.
       </div>
     </footer>
   )

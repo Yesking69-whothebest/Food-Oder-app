@@ -24,6 +24,11 @@ export default function CheckoutPage() {
   const [address, setAddress] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+
+  // ── Payment states ──
+  const [showPayment, setShowPayment] = useState(false)   // true = show QR + "I have paid" button
+  const [orderCreating, setOrderCreating] = useState(false)
+
   const router = useRouter()
   const supabase = createClient()
 
@@ -50,7 +55,6 @@ export default function CheckoutPage() {
         .single()
       setProfile(profileData)
 
-      // Auto-fill name and phone from profile
       if (profileData?.name) setName(profileData.name)
       if (profileData?.phone) setPhone(profileData.phone)
     }
@@ -66,7 +70,8 @@ export default function CheckoutPage() {
   const discountAmount = bulkEligible ? Math.round(total * discountPercent * 100) / 100 : 0
   const finalTotal = Math.max(0, total - discountAmount)
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  // ── Step 1: User clicks "Place Order" → validate & show QR ──
+  const handleGoToPayment = (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
 
@@ -75,59 +80,73 @@ export default function CheckoutPage() {
       return
     }
 
-    setLoading(true)
-
-    // Insert order
-    const { data: orderData, error: orderError } = await supabase
-      .from('orders')
-      .insert({
-        user_id: user.id,
-        user_name: name,
-        phone,
-        address,
-        total_price: finalTotal,
-        status: 'pending',
-      })
-      .select()
-      .single()
-
-    if (orderError || !orderData) {
-      setError('Failed to place order. Please try again.')
-      setLoading(false)
-      return
-    }
-
-    // Insert order items and reduce stock
-    for (const item of cartItems) {
-      await supabase.from('order_items').insert({
-        order_id: orderData.id,
-        item_name: item.name,
-        price: item.price,
-        quantity: item.quantity,
-      })
-
-      // Reduce stock (make sure you have a reduce_stock RPC or handle it differently)
-      await supabase.rpc('reduce_stock', {
-        item_id: item.id,
-        qty: item.quantity,
-      })
-    }
-
-    // Clear cart and redirect
-    localStorage.removeItem('cart')
-    window.dispatchEvent(new Event('storage'))
-    sessionStorage.setItem('last_order_id', String(orderData.id))
-    if (bulkEligible) {
-      sessionStorage.setItem('order_discount', String(discountAmount))
-      sessionStorage.setItem('order_discount_percent', String(discountPercent * 100))
-    }
-
-    router.push('/order-success')
+    // Show payment section (QR + "I have paid")
+    setShowPayment(true)
   }
+
+// ── Step 2: User clicks "I have paid" → create the order ──
+const handleConfirmPayment = async () => {
+  setOrderCreating(true)
+  setError('')
+
+  // Insert order
+  const { data: orderData, error: orderError } = await supabase
+    .from('orders')
+    .insert({
+      user_id: user.id,
+      user_name: name,
+      phone,
+      address,
+      total_price: finalTotal,
+      status: 'pending',
+      // payment_method removed
+    })
+    .select()
+    .single()
+
+  if (orderError) {
+    // Show the real error message instead of generic text
+    setError(orderError.message)
+    setOrderCreating(false)
+    return
+  }
+
+  if (!orderData) {
+    setError('Failed to place order. Please try again.')
+    setOrderCreating(false)
+    return
+  }
+
+  // Insert order items and reduce stock
+  for (const item of cartItems) {
+    await supabase.from('order_items').insert({
+      order_id: orderData.id,
+      item_name: item.name,
+      price: item.price,
+      quantity: item.quantity,
+    })
+
+    await supabase.rpc('reduce_stock', {
+      item_id: item.id,
+      qty: item.quantity,
+    })
+  }
+
+  // Clear cart and redirect
+  localStorage.removeItem('cart')
+  window.dispatchEvent(new Event('storage'))
+  sessionStorage.setItem('last_order_id', String(orderData.id))
+  if (bulkEligible) {
+    sessionStorage.setItem('order_discount', String(discountAmount))
+    sessionStorage.setItem('order_discount_percent', String(discountPercent * 100))
+  }
+
+  router.push('/order-success')
+}
 
   return (
     <div className="bg-gray-50 min-h-screen">
-      {/* ── MINIMAL NAVBAR (same as cart) ── */}
+      {/* ── MINIMAL NAVBAR ── */}
       <nav className="bg-white px-4 md:px-8 py-4 flex justify-between items-center shadow-sm sticky top-0 z-10">
         <div className="flex items-center gap-2">
           <Logo size={40} />
@@ -151,52 +170,87 @@ export default function CheckoutPage() {
         )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          {/* ── LEFT SIDE: Delivery Details OR Payment Screen ── */}
           <div className="bg-white rounded-2xl shadow p-6">
-            <h2 className="text-xl font-black text-gray-800 mb-6">Delivery Details</h2>
-            <form onSubmit={handleSubmit}>
-              <div className="mb-4">
-                <label className="block text-gray-700 font-semibold mb-2">Full Name</label>
-                <input
-                  type="text"
-                  required
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-4 focus:ring-orange-400 outline-none transition-all"
-                  placeholder="Your full name"
-                />
-              </div>
-              <div className="mb-4">
-                <label className="block text-gray-700 font-semibold mb-2">Phone Number</label>
-                <input
-                  type="text"
-                  required
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-4 focus:ring-orange-400 outline-none transition-all"
-                  placeholder="e.g. 012 345 678"
-                />
-              </div>
-              <div className="mb-6">
-                <label className="block text-gray-700 font-semibold mb-2">Delivery Address</label>
-                <textarea
-                  required
-                  rows={3}
-                  value={address}
-                  onChange={(e) => setAddress(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-4 focus:ring-orange-400 outline-none transition-all"
-                  placeholder="Street, City, Province"
-                />
-              </div>
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-4 rounded-2xl shadow-lg transition-all text-lg disabled:opacity-50"
-              >
-                {loading ? 'Placing Order...' : 'Place Order →'}
-              </button>
-            </form>
+            {!showPayment ? (
+              <>
+                <h2 className="text-xl font-black text-gray-800 mb-6">Delivery Details</h2>
+                <form onSubmit={handleGoToPayment}>
+                  <div className="mb-4">
+                    <label className="block text-gray-700 font-semibold mb-2">Full Name</label>
+                    <input
+                      type="text"
+                      required
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-4 focus:ring-orange-400 outline-none transition-all"
+                      placeholder="Your full name"
+                    />
+                  </div>
+                  <div className="mb-4">
+                    <label className="block text-gray-700 font-semibold mb-2">Phone Number</label>
+                    <input
+                      type="text"
+                      required
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-4 focus:ring-orange-400 outline-none transition-all"
+                      placeholder="e.g. 012 345 678"
+                    />
+                  </div>
+                  <div className="mb-6">
+                    <label className="block text-gray-700 font-semibold mb-2">Delivery Address</label>
+                    <textarea
+                      required
+                      rows={3}
+                      value={address}
+                      onChange={(e) => setAddress(e.target.value)}
+                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-4 focus:ring-orange-400 outline-none transition-all"
+                      placeholder="Street, City, Province"
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-4 rounded-2xl shadow-lg transition-all text-lg"
+                  >
+                    Proceed to Payment →
+                  </button>
+                </form>
+              </>
+            ) : (
+              <>
+                <h2 className="text-xl font-black text-gray-800 mb-6">Scan QR Code to Pay</h2>
+                {/* ── PLACEHOLDER QR CODE ── */}
+                <div className="flex flex-col items-center gap-4">
+                  <img
+                    src="/images/QR.jpg"   // ← replace with your real QR image
+                    alt="QR Code"
+                    className="w-48 h-48 border border-gray-200 rounded-xl object-contain"
+                  />
+                  <p className="text-sm text-gray-500 text-center">
+                    Use your banking app to scan this QR code.
+                    <br />
+                    Once the payment is completed, click the button below.
+                  </p>
+                  <button
+                    onClick={handleConfirmPayment}
+                    disabled={orderCreating}
+                    className="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-4 rounded-2xl shadow-lg transition-all text-lg disabled:opacity-50"
+                  >
+                    {orderCreating ? 'Placing Order...' : 'I have paid – Place Order'}
+                  </button>
+                  <button
+                    onClick={() => setShowPayment(false)}
+                    className="text-gray-500 hover:text-gray-700 underline text-sm"
+                  >
+                    ← Back to delivery details
+                  </button>
+                </div>
+              </>
+            )}
           </div>
 
+          {/* ── RIGHT SIDE: Order Summary (always visible) ── */}
           <div className="bg-white rounded-2xl shadow p-6">
             <h2 className="text-xl font-black text-gray-800 mb-6">Order Summary</h2>
             <div className="space-y-3 mb-6">
@@ -223,7 +277,7 @@ export default function CheckoutPage() {
               {bulkEligible && (
                 <>
                   <div className="flex justify-between items-center text-sm text-gray-600">
-                    <span>Bulk Discount (15%):</span>
+                    <span>Discount (15%):</span>
                     <span className="font-black text-green-600">- ${discountAmount.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between items-center">
