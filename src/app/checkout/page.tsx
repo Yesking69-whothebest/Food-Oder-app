@@ -140,7 +140,28 @@ const handleConfirmPayment = async () => {
     sessionStorage.setItem('order_discount', String(discountAmount))
     sessionStorage.setItem('order_discount_percent', String(discountPercent * 100))
   }
-
+  // Send notification to Telegram
+try {
+  await fetch('/api/send-order-notification', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      id: orderData.id,
+      user_name: name,
+      phone,
+      address,
+      items: cartItems.map((item) => ({
+        name: item.name,
+        price: item.price,
+        quantity: item.quantity,
+      })),
+      total: finalTotal,
+    }),
+  })
+} catch (err) {
+  console.error('Telegram notification failed:', err)
+  // Do NOT block the success page if notification fails
+}
   router.push('/order-success')
 }
 
