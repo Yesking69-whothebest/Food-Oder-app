@@ -68,7 +68,7 @@ export default function FavoritesPage() {
       <nav className="bg-white px-4 md:px-8 py-4 flex justify-between items-center shadow-sm sticky top-0 z-10">
         <div className="flex items-center gap-2">
           <Logo size={40} />
-          <h1 className="text-orange-500 font-black text-xl">FoodOrder</h1>
+          <h1 className="text-orange-500 font-black text-xl">FoodOrderApp</h1>
         </div>
         <Link
           href="/dashboard"

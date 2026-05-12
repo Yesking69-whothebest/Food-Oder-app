@@ -91,7 +91,7 @@ export default function Navbar() {
       {/* ── Logo ── */}
       <div className="flex items-center gap-2">
         <Logo size={40} />
-        <h1 className="text-orange-500 font-black text-xl">FoodOrder</h1>
+        <h1 className="text-orange-500 font-black text-xl">FoodOrderApp</h1>
       </div>
 
       {/* ── DESKTOP: Search form (unchanged) ── */}

@@ -10,7 +10,7 @@ export default function Footer() {
         <div>
           <div className="flex items-center gap-2 mb-3">
             <Logo size={36} />
-            <span className="text-white font-black text-lg">FoodOrder</span>
+            <span className="text-white font-black text-lg">FoodOrderApp</span>
           </div>
           <p className="text-sm text-gray-400 leading-relaxed">
             Fresh & delicious meals delivered to your doorstep. Order now and enjoy!
@@ -31,16 +31,16 @@ export default function Footer() {
 
         {/* Contact / Info */}
         <div>
-          <h3 className="text-white font-semibold mb-3">Contact</h3>
+          <h3 className="text-white font-semibold mb-3">Contact Us</h3>
           <ul className="space-y-2 text-sm">
             <li className="flex items-center gap-2">
-              <span>📧</span> support@foodorder.com
+              <span>📧</span> FoodOrderApp@gmail.com
             </li>
             <li className="flex items-center gap-2">
               <span>📞</span> +855 12 345 678
             </li>
             <li className="flex items-center gap-2">
-              <span>📍</span> Phnom Penh, Cambodia
+              <span>📍</span> Siem Reap, Cambodia
             </li>
           </ul>
           <div className="flex gap-3 mt-4">

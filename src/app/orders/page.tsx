@@ -8,8 +8,8 @@ import Logo from '@/components/Logo'
 import { type Order, type OrderItem } from '@/types'
 import { Package, Clock, ChefHat, CheckCircle, XCircle, ArrowLeft } from 'lucide-react'
 
+// Status badges – pending removed
 const statusConfig: Record<string, { class: string; icon: React.ReactNode; label: string }> = {
-  pending: { class: 'bg-yellow-100 text-yellow-700', icon: <Clock size={14} />, label: 'Pending' },
   preparing: { class: 'bg-blue-100 text-blue-700', icon: <ChefHat size={14} />, label: 'Preparing' },
   delivered: { class: 'bg-green-100 text-green-700', icon: <CheckCircle size={14} />, label: 'Delivered' },
   cancelled: { class: 'bg-red-100 text-red-700', icon: <XCircle size={14} />, label: 'Cancelled' },
@@ -38,6 +38,7 @@ export default function OrdersPage() {
 
       setOrders(ordersData || [])
 
+      // Fetch items for each order
       const itemsMap: Record<number, OrderItem[]> = {}
       for (const order of ordersData || []) {
         const { data: items } = await supabase
@@ -62,11 +63,11 @@ export default function OrdersPage() {
 
   return (
     <div className="bg-gray-50 min-h-screen">
-      {/* ── MINIMAL NAVBAR ── */}
+      {/* Minimal Navbar */}
       <nav className="bg-white px-4 md:px-8 py-4 flex justify-between items-center shadow-sm sticky top-0 z-10">
         <div className="flex items-center gap-2">
           <Logo size={40} />
-          <h1 className="text-orange-500 font-black text-xl">FoodOrder</h1>
+          <h1 className="text-orange-500 font-black text-xl">FoodOrderApp</h1>
         </div>
         <Link
           href="/dashboard"
@@ -84,6 +85,7 @@ export default function OrdersPage() {
             {orders.map((order) => {
               const items = orderItems[order.id] || []
               const status = statusConfig[order.status || 'pending']
+
               return (
                 <div key={order.id} className="bg-white rounded-2xl shadow overflow-hidden">
                   <div className="bg-orange-500 px-6 py-4">
@@ -128,11 +130,16 @@ export default function OrdersPage() {
                     </div>
 
                     <div className="flex justify-between items-center">
-                      <span
-                        className={`${status.class} font-black px-4 py-1 rounded-full text-sm uppercase flex items-center gap-1`}
-                      >
-                        {status.icon} {status.label}
-                      </span>
+                      {/* Only show badge if status exists in config (i.e., not pending) */}
+                      {status ? (
+                        <span
+                          className={`${status.class} font-black px-4 py-1 rounded-full text-sm uppercase flex items-center gap-1`}
+                        >
+                          {status.icon} {status.label}
+                        </span>
+                      ) : (
+                        <span /> /* empty placeholder to keep layout */
+                      )}
                       <span className="font-black text-orange-500 text-xl">
                         ${Number(order.total_price).toFixed(2)}
                       </span>

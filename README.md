@@ -1,4 +1,4 @@
-# FoodOrder App - Next.js + Supabase
+# FoodOrderApp App - Next.js + Supabase
 
 A complete food ordering application built with Next.js 14 (App Router) and Supabase.
 

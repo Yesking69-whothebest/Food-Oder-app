@@ -6,7 +6,7 @@ export default function Logo({ size = 40 }: { size?: number }) {
     <Link href="/dashboard">
       <Image 
         src="/images/Logo.jpg" 
-        alt="FoodOrder Logo" 
+        alt="FoodOrderApp Logo" 
         width={size} 
         height={size} 
         className="rounded-full hover:opacity-80 transition-all object-cover"
