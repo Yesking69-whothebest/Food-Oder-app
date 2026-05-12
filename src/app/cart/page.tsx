@@ -80,7 +80,6 @@ export default function CartPage() {
 
   return (
     <div className="bg-gray-50 min-h-screen">
-      {/* ── MINIMAL NAVBAR (No search, no full menu) ── */}
       <nav className="bg-white px-4 md:px-8 py-4 flex justify-between items-center shadow-sm sticky top-0 z-10">
         <div className="flex items-center gap-2">
           <Logo size={40} />
@@ -98,7 +97,7 @@ export default function CartPage() {
         <h1 className="text-3xl font-black text-gray-800 mb-8">🛒 Your Cart</h1>
 
         {stockError && (
-          <div className="bg-red-100 text-red-700 font-semibold px-5 py-3 rounded-xl mb-5">
+          <div className="bg-red-100 text-red-700 font-semibold px-5 py-3 rounded-xl mb-5 animate-pulse">
             You can't add more. Stock limit reached!
           </div>
         )}
@@ -107,8 +106,10 @@ export default function CartPage() {
           <>
             <div className="space-y-4 mb-8">
               {cartItems.map((item) => (
-                <div key={item.id} className="bg-white rounded-2xl shadow p-4 flex items-center gap-4">
-                  {/* ── FIXED IMAGE DISPLAY ── */}
+                <div
+                  key={item.id}
+                  className="bg-white rounded-2xl shadow p-4 flex items-center gap-4 transition-all hover:shadow-md"
+                >
                   {item.photo ? (
                     <img
                       src={item.photo}
@@ -129,14 +130,14 @@ export default function CartPage() {
                   <div className="flex items-center gap-3">
                     <button
                       onClick={() => updateQuantity(item.id, 'decrease')}
-                      className="bg-gray-100 hover:bg-gray-200 text-gray-800 font-black w-8 h-8 rounded-full flex items-center justify-center transition-all"
+                      className="bg-gray-100 hover:bg-gray-200 text-gray-800 font-black w-8 h-8 rounded-full flex items-center justify-center transition-all active:scale-90"
                     >
                       <Minus size={14} />
                     </button>
                     <span className="font-black text-gray-800 text-lg w-6 text-center">{item.quantity}</span>
                     <button
                       onClick={() => updateQuantity(item.id, 'increase')}
-                      className="bg-orange-500 hover:bg-orange-600 text-white font-black w-8 h-8 rounded-full flex items-center justify-center transition-all"
+                      className="bg-orange-500 hover:bg-orange-600 text-white font-black w-8 h-8 rounded-full flex items-center justify-center transition-all active:scale-90"
                     >
                       <Plus size={14} />
                     </button>
@@ -148,7 +149,7 @@ export default function CartPage() {
 
                   <button
                     onClick={() => removeItem(item.id)}
-                    className="text-red-400 hover:text-red-600 font-bold text-xl transition-all"
+                    className="text-red-400 hover:text-red-600 font-bold text-xl transition-all active:scale-90"
                   >
                     <X size={18} />
                   </button>
@@ -169,7 +170,7 @@ export default function CartPage() {
 
             <Link
               href="/checkout"
-              className="block w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-4 rounded-2xl shadow-lg transition-all text-lg text-center"
+              className="block w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-4 rounded-2xl shadow-lg transition-all text-lg text-center active:scale-[0.99]"
             >
               Proceed to Checkout →
             </Link>

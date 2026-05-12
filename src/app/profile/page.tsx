@@ -56,7 +56,7 @@ export default function ProfilePage() {
 
     const { error: updateError } = await supabase
       .from('profiles')
-      .upsert({ id: user.id, name, phone, email, updated_at: new Date() })
+      .upsert({ id: user.id, name, phone, email })   // ← no updated_at
 
     if (updateError) {
       setError(updateError.message)
@@ -78,7 +78,6 @@ export default function ProfilePage() {
 
   return (
     <div className="bg-gray-50 min-h-screen">
-      {/* ── MINIMAL NAVBAR ── */}
       <nav className="bg-white px-4 md:px-8 py-4 flex justify-between items-center shadow-sm sticky top-0 z-10">
         <div className="flex items-center gap-2">
           <Logo size={40} />
@@ -160,20 +159,6 @@ export default function ProfilePage() {
           >
             🔑 Change Password
           </Link>
-        </div>
-
-        <div className="bg-white rounded-2xl shadow p-6 mt-6">
-          <h2 className="text-xl font-black text-gray-800 mb-4">Account Info</h2>
-          <div className="flex justify-between items-center py-2 border-b border-gray-100">
-            <span className="text-gray-500">Member Since</span>
-            <span className="font-semibold text-gray-800">
-              {new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
-            </span>
-          </div>
-          <div className="flex justify-between items-center py-2">
-            <span className="text-gray-500">Account Role</span>
-            <span className="font-semibold text-orange-500 uppercase">User</span>
-          </div>
         </div>
       </div>
     </div>

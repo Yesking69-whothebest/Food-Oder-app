@@ -7,7 +7,6 @@ import { createClient } from '@/lib/supabase/client'
 import Navbar from '@/components/Navbar'
 import { CATEGORIES, type MenuItem, type Category } from '@/types'
 
-// ── Toast component ──
 function Toast({ message, visible }: { message: string; visible: boolean }) {
   return (
     <div
@@ -27,8 +26,8 @@ function DashboardContent() {
   const [category, setCategory] = useState<Category>('all')
   const [search, setSearch] = useState('')
   const [loading, setLoading] = useState(true)
+  const [showItems, setShowItems] = useState(false)
 
-  // ── Toast state ──
   const [toast, setToast] = useState({ message: '', visible: false })
   const [toastTimer, setToastTimer] = useState<NodeJS.Timeout | null>(null)
 
@@ -36,11 +35,8 @@ function DashboardContent() {
   const searchParams = useSearchParams()
   const supabase = createClient()
 
-  // ── Show toast helper ──
   const showToast = (message: string) => {
-    // Clear previous timer if exists
     if (toastTimer) clearTimeout(toastTimer)
-
     setToast({ message, visible: true })
     const timer = setTimeout(() => {
       setToast({ message: '', visible: false })
@@ -74,6 +70,7 @@ function DashboardContent() {
         .eq('user_id', user.id)
       setFavorites(favData?.map(f => f.menu_item_id) || [])
       setLoading(false)
+      setTimeout(() => setShowItems(true), 50)
     }
     init()
   }, [searchParams, supabase, router])
@@ -81,7 +78,6 @@ function DashboardContent() {
   const toggleFavorite = async (itemId: number) => {
     if (!user) return
     const isFav = favorites.includes(itemId)
-
     if (isFav) {
       await supabase.from('favorites').delete().eq('user_id', user.id).eq('menu_item_id', itemId)
       setFavorites(favorites.filter(id => id !== itemId))
@@ -102,15 +98,13 @@ function DashboardContent() {
     }
     localStorage.setItem('cart', JSON.stringify(cart))
     window.dispatchEvent(new Event('storage'))
-
-    // ── Show in‑app toast ──
     showToast(`${item.name} added to cart!`)
   }
 
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-orange-500 font-black text-xl">Loading...</div>
+        <div className="text-orange-500 font-black text-xl animate-pulse">Loading...</div>
       </div>
     )
   }
@@ -118,23 +112,35 @@ function DashboardContent() {
   return (
     <div className="bg-gray-50 min-h-screen">
       <Navbar />
-
-      {/* ── Toast notification ── */}
       <Toast message={toast.message} visible={toast.visible} />
 
+      {/* Hero */}
       <div className="bg-gradient-to-r from-orange-500 to-orange-400 text-white text-center py-14 px-8">
         <h2 className="text-4xl font-black mb-2">Order Your Favorite Food</h2>
         <p className="text-white/80 text-lg">Fresh and delicious meals delivered to your door</p>
       </div>
 
-      <div className="max-w-6xl mx-auto px-4 md:px-8 mt-8">
+      {/* Discount Banner – centred, tight around text */}
+      <div className="flex justify-center px-4 pt-4">
+        <div className="inline-flex items-center gap-2 bg-green-100 border border-green-300 rounded-full px-5 py-2 text-green-800 font-semibold text-sm md:text-base">
+          <span>🎉</span>
+          <span>
+            <strong className="text-green-900">Buy more than 3 items</strong> and get{' '}
+            <strong className="text-green-900">15% off</strong> your entire order!
+          </span>
+        </div>
+      </div>
+
+      <div className="max-w-6xl mx-auto px-4 md:px-8 mt-6">
+        {/* Category Filter */}
         <div className="flex gap-3 overflow-x-auto pb-4 mb-8 scrollbar-hide">
           {(Object.keys(CATEGORIES) as Category[]).map((key) => (
             <Link
               key={key}
               href={`/dashboard?category=${key}${search ? `&search=${search}` : ''}`}
-              className={`flex-shrink-0 flex items-center gap-2 px-5 py-3 rounded-2xl font-bold transition-all whitespace-nowrap
-                ${category === key ? 'bg-orange-500 text-white shadow-lg' : 'bg-white text-gray-600 hover:bg-orange-50 shadow'}`}
+              className={`flex-shrink-0 flex items-center gap-2 px-5 py-3 rounded-2xl font-bold transition-all whitespace-nowrap ${
+                category === key ? 'bg-orange-500 text-white shadow-lg' : 'bg-white text-gray-600 hover:bg-orange-50 shadow'
+              }`}
             >
               {CATEGORIES[key].icon} {CATEGORIES[key].label}
             </Link>
@@ -144,16 +150,19 @@ function DashboardContent() {
         <p className="text-gray-400 text-sm mb-4">{items.length} items found</p>
 
         {items.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 pb-10">
+          <div
+            className={`grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 pb-10 transition-all duration-700 ${
+              showItems ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+            }`}
+          >
             {items.map((item) => (
-              <div key={item.id} className="bg-white rounded-2xl shadow hover:shadow-lg transition-all overflow-hidden flex flex-col">
+              <div
+                key={item.id}
+                className="bg-white rounded-2xl shadow hover:shadow-lg transition-all overflow-hidden flex flex-col hover:scale-[1.02]"
+              >
                 <div className="relative">
                   {item.photo ? (
-                    <img
-                      src={item.photo}
-                      alt={item.name}
-                      className="w-full h-48 object-cover"
-                    />
+                    <img src={item.photo} alt={item.name} className="w-full h-48 object-cover" />
                   ) : (
                     <div className="w-full h-48 bg-orange-50 flex items-center justify-center text-5xl">
                       {CATEGORIES[item.category as Category]?.icon || '🍽️'}
@@ -162,7 +171,7 @@ function DashboardContent() {
 
                   <button
                     onClick={() => toggleFavorite(item.id)}
-                    className="absolute top-3 right-3 text-2xl transition-opacity"
+                    className="absolute top-3 right-3 text-2xl transition-transform active:scale-125"
                   >
                     {favorites.includes(item.id) ? (
                       <span className="text-red-500">❤️</span>
@@ -195,7 +204,7 @@ function DashboardContent() {
                     {item.stock > 0 ? (
                       <button
                         onClick={() => addToCart(item)}
-                        className="bg-orange-500 hover:bg-orange-600 text-white font-bold px-4 py-2 rounded-xl transition-all text-sm"
+                        className="bg-orange-500 hover:bg-orange-600 text-white font-bold px-4 py-2 rounded-xl transition-all text-sm active:scale-95"
                       >
                         + Add
                       </button>
@@ -217,14 +226,15 @@ function DashboardContent() {
   )
 }
 
-// Wrap the whole page component with Suspense
 export default function DashboardPage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-orange-500 font-black text-xl">Loading dashboard…</div>
-      </div>
-    }>
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <div className="text-orange-500 font-black text-xl animate-pulse">Loading dashboard…</div>
+        </div>
+      }
+    >
       <DashboardContent />
     </Suspense>
   )
