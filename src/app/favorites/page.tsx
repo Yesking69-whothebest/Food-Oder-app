@@ -36,7 +36,23 @@ export default function FavoritesPage() {
     }
     init()
   }, [supabase, router])
+  useEffect(() => {
+  const checkAdmin = async () => {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
 
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single()
+
+    if (profile?.role === 'admin') {
+      router.push('/admin/dashboard')
+    }
+  }
+  checkAdmin()
+}, [supabase, router])
   const toggleFavorite = async (itemId: number) => {
     if (!user) return
     await supabase.from('favorites').delete().eq('user_id', user.id).eq('menu_item_id', itemId)

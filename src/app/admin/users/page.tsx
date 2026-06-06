@@ -40,6 +40,7 @@ export default function AdminUsersPage() {
     init()
   }, [supabase, router])
 
+  // FIXED: check for deletion errors and only update UI on success
   const deleteUser = async (id: string) => {
     if (id === currentUser?.id) {
       setError('You cannot delete your own account!')
@@ -47,7 +48,18 @@ export default function AdminUsersPage() {
     }
     if (!confirm('Delete this user?')) return
 
-    await supabase.from('profiles').delete().eq('id', id)
+    // Attempt to delete the profile
+    const { error: deleteError } = await supabase
+      .from('profiles')
+      .delete()
+      .eq('id', id)
+
+    if (deleteError) {
+      setError('Failed to delete user: ' + deleteError.message)
+      return
+    }
+
+    // Remove the user from the local list
     setUsers(users.filter(u => u.id !== id))
     setSuccess('User deleted successfully!')
     setTimeout(() => setSuccess(''), 3000)
@@ -77,7 +89,7 @@ export default function AdminUsersPage() {
           <Logo size={40} />
           <h1 className="text-orange-500 font-black text-xl">Manage Users</h1>
         </div>
-        <Link href="/dashboard" className="bg-orange-500 hover:bg-orange-600 text-white font-bold px-4 py-2 rounded-xl transition-all flex items-center gap-1">
+        <Link href="/admin/dashboard" className="bg-orange-500 hover:bg-orange-600 text-white font-bold px-4 py-2 rounded-xl transition-all flex items-center gap-1">
           <ArrowLeft size={16} /> Dashboard
         </Link>
       </div>

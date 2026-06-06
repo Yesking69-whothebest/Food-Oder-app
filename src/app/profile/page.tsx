@@ -1,22 +1,26 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import Logo from '@/components/Logo'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, Camera } from 'lucide-react'
 
 export default function ProfilePage() {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [phone, setPhone] = useState('')
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
+  const [avatarFile, setAvatarFile] = useState<File | null>(null)
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
   const [success, setSuccess] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [initialLoading, setInitialLoading] = useState(true)
   const router = useRouter()
   const supabase = createClient()
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     const init = async () => {
@@ -36,6 +40,8 @@ export default function ProfilePage() {
         setName(profile.name || '')
         setEmail(profile.email || user.email || '')
         setPhone(profile.phone || '')
+        setAvatarUrl(profile.avatar_url || null)
+        setAvatarPreview(profile.avatar_url || null)
       } else {
         setName('')
         setEmail(user.email || '')
@@ -44,6 +50,39 @@ export default function ProfilePage() {
     }
     init()
   }, [supabase, router])
+
+  // Handle avatar file selection
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      setAvatarFile(file)
+      const reader = new FileReader()
+      reader.onloadend = () => setAvatarPreview(reader.result as string)
+      reader.readAsDataURL(file)
+    }
+  }
+
+  // Upload avatar to Supabase Storage (avatars bucket)
+  const uploadAvatar = async (file: File): Promise<string | null> => {
+    const fileName = `${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.]/g, '_')}`
+    const { data, error } = await supabase.storage
+      .from('avatars')
+      .upload(fileName, file, {
+        cacheControl: '3600',
+        upsert: false,
+      })
+
+    if (error) {
+      console.error('Avatar upload error:', error)
+      return null
+    }
+
+    const { data: urlData } = supabase.storage
+      .from('avatars')
+      .getPublicUrl(data.path)
+
+    return urlData.publicUrl
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -54,9 +93,30 @@ export default function ProfilePage() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
 
+    // Upload new avatar if selected
+    let finalAvatarUrl = avatarUrl
+    if (avatarFile) {
+      const uploadedUrl = await uploadAvatar(avatarFile)
+      if (uploadedUrl) {
+        finalAvatarUrl = uploadedUrl
+        setAvatarUrl(uploadedUrl)
+        setAvatarPreview(uploadedUrl)
+      } else {
+        setError('Failed to upload avatar.')
+        setLoading(false)
+        return
+      }
+    }
+
     const { error: updateError } = await supabase
       .from('profiles')
-      .upsert({ id: user.id, name, phone, email })   // ← no updated_at
+      .upsert({
+        id: user.id,
+        name,
+        phone,
+        email,
+        avatar_url: finalAvatarUrl,
+      })
 
     if (updateError) {
       setError(updateError.message)
@@ -65,6 +125,8 @@ export default function ProfilePage() {
     }
 
     setSuccess('Profile updated successfully!')
+    setAvatarFile(null)
+    if (fileInputRef.current) fileInputRef.current.value = ''
     setLoading(false)
   }
 
@@ -78,6 +140,7 @@ export default function ProfilePage() {
 
   return (
     <div className="bg-gray-50 min-h-screen">
+      {/* Minimal Navbar */}
       <nav className="bg-white px-4 md:px-8 py-4 flex justify-between items-center shadow-sm sticky top-0 z-10">
         <div className="flex items-center gap-2">
           <Logo size={40} />
@@ -106,9 +169,34 @@ export default function ProfilePage() {
         )}
 
         <div className="bg-white rounded-2xl shadow p-8">
-          <div className="text-center mb-8">
-            <div className="w-24 h-24 bg-orange-500 rounded-full flex items-center justify-center mx-auto text-white text-4xl font-black">
-              {name ? name.charAt(0).toUpperCase() : '?'}
+          {/* Avatar Section */}
+          <div className="flex flex-col items-center mb-8">
+            <div className="relative">
+              {avatarPreview ? (
+                <img
+                  src={avatarPreview}
+                  alt="Avatar"
+                  className="w-24 h-24 rounded-full object-cover border-2 border-orange-500"
+                />
+              ) : (
+                <div className="w-24 h-24 bg-orange-500 rounded-full flex items-center justify-center text-white text-4xl font-black">
+                  {name ? name.charAt(0).toUpperCase() : '?'}
+                </div>
+              )}
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="absolute bottom-0 right-0 bg-orange-500 text-white p-1.5 rounded-full shadow hover:bg-orange-600 transition"
+              >
+                <Camera size={16} />
+              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleAvatarChange}
+                className="hidden"
+              />
             </div>
             <p className="text-gray-800 font-black text-xl mt-3">{name || 'User'}</p>
           </div>

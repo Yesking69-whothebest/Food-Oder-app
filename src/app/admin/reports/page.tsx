@@ -144,7 +144,7 @@ export default function ReportsPage() {
             className="bg-gray-800 hover:bg-gray-900 text-white font-bold px-4 py-2 rounded-xl transition-all flex items-center gap-1">
             <Printer size={16} /> Save PDF
           </button>
-          <Link href="/dashboard" className="bg-orange-500 hover:bg-orange-600 text-white font-bold px-4 py-2 rounded-xl transition-all flex items-center gap-1">
+          <Link href="/admin/dashboard" className="bg-orange-500 hover:bg-orange-600 text-white font-bold px-4 py-2 rounded-xl transition-all flex items-center gap-1">
             <ArrowLeft size={16} /> Dashboard
           </Link>
         </div>

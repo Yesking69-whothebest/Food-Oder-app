@@ -75,6 +75,24 @@ function DashboardContent() {
     init()
   }, [searchParams, supabase, router])
 
+  useEffect(() => {
+  const checkAdmin = async () => {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single()
+
+    if (profile?.role === 'admin') {
+      router.push('/admin/dashboard')
+    }
+  }
+  checkAdmin()
+}, [supabase, router])
+
   const toggleFavorite = async (itemId: number) => {
     if (!user) return
     const isFav = favorites.includes(itemId)

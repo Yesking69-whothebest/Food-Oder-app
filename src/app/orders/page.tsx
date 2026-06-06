@@ -52,7 +52,23 @@ export default function OrdersPage() {
     }
     init()
   }, [supabase, router])
+  useEffect(() => {
+  const checkAdmin = async () => {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
 
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single()
+
+    if (profile?.role === 'admin') {
+      router.push('/admin/dashboard')
+    }
+  }
+  checkAdmin()
+}, [supabase, router])
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">

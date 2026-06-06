@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import Logo from '@/components/Logo'
 import { type MenuItem } from '@/types'
-import { Pencil, Trash2, Plus } from 'lucide-react'
+import { Pencil, Trash2, Plus, ArrowLeft } from 'lucide-react'
 
 const categoryLabels: Record<string, string> = {
   khmer: 'KHMER FOOD',
@@ -71,6 +71,8 @@ export default function AdminMenuPage() {
   return (
     <div className="bg-gray-100 min-h-screen">
       <div className="max-w-6xl mx-auto p-4 md:p-8">
+        {/* Back link to Admin Dashboard */}
+
         <div className="flex justify-between items-center mb-8">
           <div className="flex items-center gap-3">
             <Logo size={48} />
@@ -88,14 +90,14 @@ export default function AdminMenuPage() {
             {items.map((item) => (
               <div key={item.id} className="bg-white rounded-2xl shadow overflow-hidden flex flex-col h-full">
                 {item.photo ? (
-  <img
-    src={item.photo}
-    alt={item.name}
-    className="w-full h-48 object-cover"
-  />
-) : (
-  <div className="w-full h-48 bg-gray-200 flex items-center justify-center text-gray-400">No Image</div>
-)}
+                  <img
+                    src={item.photo}
+                    alt={item.name}
+                    className="w-full h-48 object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-48 bg-gray-200 flex items-center justify-center text-gray-400">No Image</div>
+                )}
 
                 <div className="p-4 flex flex-col flex-1">
                   <span className="text-xs bg-orange-100 text-orange-600 font-semibold px-2 py-1 rounded-full w-fit">
